@@ -1,5 +1,10 @@
 server:
-  port: 8081
+  port: ${PORT:8081}
+  servlet:
+    session:
+      cookie:
+        same-site: ${COOKIE_SAME_SITE:none}
+        secure: ${COOKIE_SECURE:true}
 
 spring:
   datasource:
@@ -16,12 +21,6 @@ spring:
       hibernate:
         format_sql: true
     open-in-view: false
-
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-
 
   ai:
     openai:
@@ -47,8 +46,6 @@ spring:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
 
-
-
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
   cors:
@@ -64,29 +61,3 @@ app:
 
   github:
     api-delay-ms: 50
-
-  services:
-    postgres:
-      image: pgvector/pgvector:pg16
-      container_name: devpiolet-postgres
-
-      environment:
-        POSTGRES_DB: devpiolet
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
-
-      ports:
-        - "5433:5432"
-
-      volumes:
-        - devpiolet_pg_data:/var/lib/postgresql/data
-        - ./docker/postgres/init-extensions.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
-
-      healthcheck:
-        test: [ "CMD-SHELL", "pg_isready -U postgres -d devpiolet" ]
-        interval: 5s
-        timeout: 5s
-        retries: 5
-
-  volumes:
-    devpiolet_pg_data:

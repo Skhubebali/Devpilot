@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: devpilot-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: ohio
+    envVars:
+      - key: PORT
+        value: 8081
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: TOKEN_ENCRYPTOR_PASSWORD
+        sync: false
+      - key: TOKEN_ENCRYPTOR_SALT
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false

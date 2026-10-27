@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { BACKEND_URL } from '@/lib/api';
 
 export interface User {
   id: string;
@@ -12,7 +13,7 @@ export const useCurrentUser = () => {
   return useQuery<User>({
     queryKey: ['currentUser'],
     queryFn: async () => {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(`${BACKEND_URL}/api/auth/me`, {
         credentials: 'include',
       });
       if (!response.ok) {

@@ -4,7 +4,6 @@ WORKDIR /app
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 RUN chmod +x mvnw
-RUN ./mvnw -DskipTests dependency:go-offline
 
 COPY src/ src/
 RUN ./mvnw -DskipTests clean package
@@ -14,6 +13,7 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
+ENV PORT=8081
 EXPOSE 8081
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8081} -jar app.jar"]

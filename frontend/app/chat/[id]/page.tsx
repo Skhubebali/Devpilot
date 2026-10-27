@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useRepository } from "@/hooks/use-repositories";
+import { BACKEND_URL } from "@/lib/api";
 import { ArrowLeft, Send, Loader2, Bot, User } from "lucide-react";
 
 type Message = {
@@ -55,7 +56,7 @@ export default function ChatPage() {
     setIsTyping(true);
 
     try {
-      const response = await fetch(`http://localhost:8081/api/repositories/${repoId}/ask`, {
+      const response = await fetch(`${BACKEND_URL}/api/repositories/${repoId}/ask`, {
         method: "POST",
         headers: {
           "Content-Type": "text/plain",

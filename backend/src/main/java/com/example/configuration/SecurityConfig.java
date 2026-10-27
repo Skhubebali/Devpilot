@@ -40,30 +40,11 @@ public class SecurityConfig {
                                 .anyRequest().authenticated())
                             .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .oauth2Login(login -> login
-                        // Added custom loginPage to disable Spring Security's default auto-generated login form
-                        // while keeping OAuth2 functional. Unauthenticated access will return 401 (configured above).
                         .loginPage("/api/auth/login-url")
                         .userInfoEndpoint(user ->
                                  user.userService(gitHubOauth2UserService))
                         .successHandler(successHandler).failureHandler(failureHandler));
-//                .authorizeHttpRequests(auth ->
-//                        auth
-//                                .requestMatchers(
-//                                        "/api/auth/login-url",
-//                                        "/oauth2/**",
-//                                        "/error",
-//                                        "/login/oauth2/**"
-//                                ).permitAll()
-//
-//                                .requestMatchers("/api/repositories/**").permitAll()
-//
-//                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-//
-//                                .anyRequest().authenticated()
-//                );
         return http.build();
-
-
     }
 
     @Bean
@@ -73,7 +54,8 @@ public class SecurityConfig {
         SimpleUrlAuthenticationSuccessHandler handler =
                 new SimpleUrlAuthenticationSuccessHandler();
 
-        handler.setDefaultTargetUrl(url + "/dashboard");
+        String baseUrl = (url != null && url.endsWith("/")) ? url.substring(0, url.length() - 1) : url;
+        handler.setDefaultTargetUrl(baseUrl + "/dashboard");
 
         return handler;
     }
@@ -85,7 +67,8 @@ public class SecurityConfig {
         SimpleUrlAuthenticationFailureHandler handler =
                 new SimpleUrlAuthenticationFailureHandler();
 
-        handler.setDefaultFailureUrl(url + "/login?error=oauth_failed");
+        String baseUrl = (url != null && url.endsWith("/")) ? url.substring(0, url.length() - 1) : url;
+        handler.setDefaultFailureUrl(baseUrl + "/login?error=oauth_failed");
 
         return handler;
     }

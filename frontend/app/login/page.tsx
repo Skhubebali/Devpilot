@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { BACKEND_URL } from '@/lib/api';
 
 export default function DevPilotLogin() {
   const [isLoading, setIsLoading] = useState(false);
@@ -14,7 +15,7 @@ export default function DevPilotLogin() {
     // 2. Redirect to the backend
     // A small timeout is added here so the buffer state is visible before the browser navigates away
     setTimeout(() => {
-      window.location.href = 'http://localhost:8081/oauth2/authorization/github';
+      window.location.href = `${BACKEND_URL}/oauth2/authorization/github`;
     },600);
   };
 

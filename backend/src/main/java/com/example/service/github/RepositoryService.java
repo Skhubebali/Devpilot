@@ -3,6 +3,7 @@ package com.example.service.github;
 import com.example.dto.RepoResponse;
 import com.example.entity.RepositoryEntity;
 import com.example.entity.User;
+import com.example.exception.UnAuthException;
 import com.example.repository.RepositoryRepo;
 import com.example.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -57,112 +58,62 @@ public class RepositoryService {
             UUID userId
     ) {
 
-        // GitHub repository ID
         Long githubRepoId =
                 ((Number) repo.get("id")).longValue();
 
-
-        // GitHub owner object
         Map<String, Object> owner =
                 (Map<String, Object>) repo.get("owner");
 
-
-        // Owner username
         String ownerName =
                 owner != null && owner.get("login") != null
                         ? String.valueOf(owner.get("login"))
                         : "";
 
-
-        // Check if repository already exists
         RepositoryEntity repository =
                 repositoryRepo.findByGithubRepoId(githubRepoId);
 
-
-        // If not found, create new entity
         if (repository == null) {
             repository = new RepositoryEntity();
         }
 
-
-        // =====================================================
-        // SET USER
-        // =====================================================
-
         repository.setUserId(userId);
-
-
-        // =====================================================
-        // GITHUB REPOSITORY DATA
-        // =====================================================
-
         repository.setGithubRepoId(githubRepoId);
-
         repository.setOwner(ownerName);
-
-        repository.setName(
-                String.valueOf(repo.get("name"))
-        );
-
-        repository.setFullname(
-                String.valueOf(repo.get("full_name"))
-        );
-
-
-        // Private repository
-        repository.setPrivate(
-                Boolean.TRUE.equals(repo.get("private"))
-        );
-
-
-        // Default branch
+        repository.setName(String.valueOf(repo.get("name")));
+        repository.setFullname(String.valueOf(repo.get("full_name")));
+        repository.setPrivate(Boolean.TRUE.equals(repo.get("private")));
         repository.setDefaultBranch(
                 repo.get("default_branch") != null
                         ? String.valueOf(repo.get("default_branch"))
                         : "main"
         );
-
-
-        // Language
         repository.setLanguage(
                 repo.get("language") != null
                         ? String.valueOf(repo.get("language"))
                         : null
         );
-
-
-        // GitHub HTML URL
         repository.setHtmlUrl(
                 repo.get("html_url") != null
                         ? String.valueOf(repo.get("html_url"))
                         : ""
         );
-
-
-        // Description
         repository.setDescription(
                 repo.get("description") != null
                         ? String.valueOf(repo.get("description"))
                         : null
         );
 
-
-        // =====================================================
-        // SAVE
-        // =====================================================
-
         return repositoryRepo.save(repository);
     }
 
 
     // =========================================================
-    // GET ALL REPOSITORIES
+    // GET ALL REPOSITORIES — scoped to current user only
     // =========================================================
 
     @Transactional(readOnly = true)
-    public List<RepoResponse> getAllRepositories() {
-
-        return repositoryRepo.findAll()
+    public List<RepoResponse> getRepositoriesForUser(UUID userId) {
+        return repositoryRepo.findByUserId(userId)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -170,17 +121,17 @@ public class RepositoryService {
 
 
     // =========================================================
-    // GET REPOSITORY BY DATABASE UUID
+    // GET SINGLE REPOSITORY — must belong to current user
     // =========================================================
 
     @Transactional(readOnly = true)
-    public RepoResponse getRepository(UUID id) {
+    public RepoResponse getRepository(UUID id, UUID userId) {
 
         RepositoryEntity repository =
-                repositoryRepo.findById(id)
+                repositoryRepo.findByIdAndUserId(id, userId)
                         .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "Repository not found: " + id
+                                new UnAuthException(
+                                        "Repository not found or access denied"
                                 )
                         );
 
@@ -213,10 +164,7 @@ public class RepositoryService {
     // =========================================================
 
     @Transactional(readOnly = true)
-    public List<RepoResponse> getRepositoriesByOwner(
-            String owner
-    ) {
-
+    public List<RepoResponse> getRepositoriesByOwner(String owner) {
         return repositoryRepo.findByOwner(owner)
                 .stream()
                 .map(this::toResponse)
@@ -225,19 +173,10 @@ public class RepositoryService {
 
 
     // =========================================================
-    // DELETE REPOSITORY
-    // =========================================================
-
-
-
-    // =========================================================
     // ENTITY -> RESPONSE DTO
     // =========================================================
 
-    private RepoResponse toResponse(
-            RepositoryEntity repository
-    ) {
-
+    private RepoResponse toResponse(RepositoryEntity repository) {
         return new RepoResponse(
                 repository.getId(),
                 repository.getGithubRepoId(),

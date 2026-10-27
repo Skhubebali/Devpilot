@@ -1,6 +1,8 @@
 package com.example.controller;
 
 import com.example.dto.RepoResponse;
+import com.example.security.AppUserPrinciple;
+import com.example.security.CurrentUser;
 import com.example.service.github.RepositoryService;
 import com.example.service.indexing.IndexingService;
 import com.example.service.rag.RagService;
@@ -19,75 +21,83 @@ public class RepoController {
     private final RepositoryService repositoryService;
     private final IndexingService indexingService;
     private final RagService ragService;
+    private final CurrentUser currentUser;
 
 
-    // GitHub se repositories sync karke DB mein save karega
+    // Sync repos from GitHub for the logged-in user
     @PostMapping("/sync/{userId}")
     public ResponseEntity<List<RepoResponse>> syncRepositories(
             @PathVariable UUID userId
     ) {
+        // Ensure the requesting user can only sync their own repos
+        AppUserPrinciple principle = currentUser.require();
+        if (!principle.getUser().getId().equals(userId)) {
+            return ResponseEntity.status(403).build();
+        }
         return ResponseEntity.ok(
                 repositoryService.syncRepositories(userId)
         );
     }
 
 
+    // Start indexing — scoped to logged-in user's repos only
     @PostMapping("/{repositoryId}/index")
     public ResponseEntity<String> indexRepository(
             @PathVariable UUID repositoryId) {
 
+        AppUserPrinciple principle = currentUser.require();
+        UUID userId = principle.getUser().getId();
+
+        // Verify ownership before indexing
+        repositoryService.getRepository(repositoryId, userId);
+
         indexingService.indexRepository(repositoryId);
 
-        return ResponseEntity.ok(
-                "Repository indexing started"
-        );
+        return ResponseEntity.ok("Repository indexing started");
     }
 
 
+    // Ask a question — scoped to logged-in user's repos only
     @PostMapping("/{repositoryId}/ask")
     public ResponseEntity<String> askRepository(
             @PathVariable UUID repositoryId,
             @RequestBody String question) {
 
-        String answer = ragService.ask(
-                repositoryId,
-                question
-        );
+        AppUserPrinciple principle = currentUser.require();
+        UUID userId = principle.getUser().getId();
+
+        // Verify ownership before allowing chat
+        repositoryService.getRepository(repositoryId, userId);
+
+        String answer = ragService.ask(repositoryId, question);
 
         return ResponseEntity.ok(answer);
     }
 
-    // DB se saari repositories
+
+    // Get only the logged-in user's repositories
     @GetMapping
     public ResponseEntity<List<RepoResponse>> getRepositories() {
 
+        AppUserPrinciple principle = currentUser.require();
+        UUID userId = principle.getUser().getId();
+
         return ResponseEntity.ok(
-                repositoryService.getAllRepositories()
+                repositoryService.getRepositoriesForUser(userId)
         );
     }
 
 
-    // Ek repository ki details
+    // Get a single repo — must belong to the logged-in user
     @GetMapping("/{id}")
     public ResponseEntity<RepoResponse> getRepository(
             @PathVariable UUID id
     ) {
+        AppUserPrinciple principle = currentUser.require();
+        UUID userId = principle.getUser().getId();
 
         return ResponseEntity.ok(
-                repositoryService.getRepository(id)
+                repositoryService.getRepository(id, userId)
         );
     }
-
-
-    @GetMapping("/owner/{owner}")
-    public ResponseEntity<List<RepoResponse>> getByOwner(
-            @PathVariable String owner
-    ) {
-        return ResponseEntity.ok(
-                repositoryService.getRepositoriesByOwner(owner)
-        );
-    }
-
-
-
 }

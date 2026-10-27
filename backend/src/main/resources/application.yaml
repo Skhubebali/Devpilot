@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: ${DB_URL:}
-    username: ${DB_USERNAME:}
-    password: ${DB_PASSWORD:}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -25,7 +25,7 @@ spring:
 
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY:}
+      api-key: ${OPENAI_API_KEY}
       chat:
         options:
           model: gpt-4o-mini
@@ -44,8 +44,8 @@ spring:
       client:
         registration:
           github:
-            client-id: ${GITHUB_CLIENT_ID:}
-            client-secret: ${GITHUB_CLIENT_SECRET:}
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
 
 
 
@@ -54,8 +54,8 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
-  token-encrytor-password: ${TOKEN_ENCRYPTOR_PASSWORD:}
-  token-encrytor-salt: ${TOKEN_ENCRYPTOR_SALT:}
+  token-encrytor-password: ${TOKEN_ENCRYPTOR_PASSWORD}
+  token-encrytor-salt: ${TOKEN_ENCRYPTOR_SALT}
 
   indexing:
     max-file-bytes: 102400

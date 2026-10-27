@@ -22,12 +22,9 @@ export interface Repo {
 }
 
 const getRepositories = async (): Promise<Repo[]> => {
-  const response = await fetch(
-    `${BACKEND_URL}/api/repositories`,
-    {
-      credentials: "include",
-    }
-  );
+  const response = await fetch(`${BACKEND_URL}/api/repositories`, {
+    credentials: "include",
+  });
 
   if (!response.ok) {
     throw new Error("Failed to fetch repositories");
@@ -36,7 +33,9 @@ const getRepositories = async (): Promise<Repo[]> => {
   return response.json();
 };
 
-export const useRepositories = (options?: { refetchInterval?: number | false }) => {
+export const useRepositories = (options?: {
+  refetchInterval?: number | false;
+}) => {
   return useQuery({
     queryKey: ["repositories"],
     queryFn: getRepositories,
@@ -64,6 +63,32 @@ export const useRepository = (id: string) => {
   });
 };
 
+const syncRepositories = async (userId: string): Promise<Repo[]> => {
+  const response = await fetch(
+    `${BACKEND_URL}/api/repositories/sync/${userId}`,
+    {
+      method: "POST",
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to sync repositories from GitHub");
+  }
+
+  return response.json();
+};
+
+export const useSyncRepositories = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: syncRepositories,
+    onSuccess: (data) => {
+      // Update the repositories cache with fresh data from GitHub
+      queryClient.setQueryData(["repositories"], data);
+    },
+  });
+};
 
 const indexRepository = async (repositoryId: string): Promise<string> => {
   const response = await fetch(

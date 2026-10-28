@@ -190,19 +190,22 @@ function RepoCard({ repo }: { repo: Repo }) {
 export default function DashboardPage() {
   const { data: user, isLoading, error } = useCurrentUser();
 
+  // Start with a 10 s poll; tighten to 5 s once we know a repo is indexing.
+  const [pollInterval, setPollInterval] = React.useState<number>(10_000);
+
   const {
     data: repositories,
     isLoading: repositoriesLoading,
     error: repositoriesError,
   } = useRepositories({
-    // Poll every 5 s only when at least one repo is actively indexing;
-    // otherwise back off to 15 s to reduce unnecessary requests.
-    refetchInterval: (query) => {
-      const repos = query.state.data as Repo[] | undefined;
-      const hasIndexing = repos?.some((r) => r.indexStatus === "INDEXING");
-      return hasIndexing ? 5000 : 15000;
-    },
+    refetchInterval: pollInterval,
   });
+
+  // Adjust polling rate based on current indexing state
+  React.useEffect(() => {
+    const hasIndexing = repositories?.some((r) => r.indexStatus === "INDEXING");
+    setPollInterval(hasIndexing ? 5_000 : 15_000);
+  }, [repositories]);
 
   const syncMutation = useSyncRepositories();
   const logoutMutation = useLogout();

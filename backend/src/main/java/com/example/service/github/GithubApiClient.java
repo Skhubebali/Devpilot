@@ -1,13 +1,16 @@
 package com.example.service.github;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GithubApiClient {
@@ -85,7 +88,7 @@ public class GithubApiClient {
     }
 
 
-    // Get repository contents
+    // Get repository contents (single directory listing)
     public List<Map<String, Object>> getContents(
             String accessToken,
             String owner,
@@ -93,14 +96,99 @@ public class GithubApiClient {
             String path
     ) {
 
+        String uri = (path == null || path.isBlank())
+                ? "/repos/{owner}/{repo}/contents"
+                : "/repos/{owner}/{repo}/contents/{path}";
+
+        if (path == null || path.isBlank()) {
+            return client(accessToken)
+                    .get()
+                    .uri(uri, owner, repo)
+                    .retrieve()
+                    .body(LIST_MAP);
+        }
+
         return client(accessToken)
                 .get()
-                .uri("/repos/{owner}/{repo}/contents/{path}",
-                        owner,
-                        repo,
-                        path)
+                .uri(uri, owner, repo, path)
                 .retrieve()
                 .body(LIST_MAP);
+    }
+
+
+    /**
+     * Get ALL files in the repository in a single API call using the Git Trees API
+     * (recursive=1). This is vastly faster than the old recursive getContents()
+     * approach which made one HTTP request per directory.
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getTreeFiles(
+            String accessToken,
+            String owner,
+            String repo,
+            String branch
+    ) {
+        try {
+            Map<String, Object> treeResponse = client(accessToken)
+                    .get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/repos/{owner}/{repo}/git/trees/{branch}")
+                            .queryParam("recursive", "1")
+                            .build(owner, repo, branch))
+                    .retrieve()
+                    .body(MAP);
+
+            if (treeResponse == null) {
+                return List.of();
+            }
+
+            List<Map<String, Object>> tree =
+                    (List<Map<String, Object>>) treeResponse.get("tree");
+
+            if (tree == null) {
+                return List.of();
+            }
+
+            // Return only blob (file) entries — filter out trees (directories)
+            return tree.stream()
+                    .filter(item -> "blob".equals(item.get("type")))
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.warn("Git Trees API failed for {}/{}, falling back to recursive listing: {}", owner, repo, e.getMessage());
+            // Fallback to the recursive contents approach if tree API fails
+            return getContentsRecursive(accessToken, owner, repo, "");
+        }
+    }
+
+
+    /**
+     * Recursive fallback — walks the repository tree directory by directory.
+     * Only used if the Git Trees API call fails.
+     */
+    private List<Map<String, Object>> getContentsRecursive(
+            String accessToken,
+            String owner,
+            String repo,
+            String path
+    ) {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        List<Map<String, Object>> contents = getContents(accessToken, owner, repo, path);
+        if (contents == null) return result;
+
+        for (Map<String, Object> item : contents) {
+            String type = String.valueOf(item.get("type"));
+            String itemPath = String.valueOf(item.get("path"));
+
+            if ("file".equals(type)) {
+                result.add(item);
+            } else if ("dir".equals(type)) {
+                result.addAll(getContentsRecursive(accessToken, owner, repo, itemPath));
+            }
+        }
+
+        return result;
     }
 
 

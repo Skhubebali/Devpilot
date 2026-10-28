@@ -24,8 +24,8 @@ public class SecurityConfig {
 
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, 
-                                            AuthenticationSuccessHandler successHandler, 
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                            AuthenticationSuccessHandler successHandler,
                                             AuthenticationFailureHandler failureHandler) throws Exception {
         http
                 .cors(Customizer.withDefaults())
@@ -34,16 +34,23 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/api/auth/login-url", "/oauth2/**",
-                                "/error", "/login/oauth2/**").permitAll()
+                        auth.requestMatchers(
+                                        "/api/auth/login-url",
+                                        "/api/auth/logout",
+                                        "/oauth2/**",
+                                        "/error",
+                                        "/login/oauth2/**"
+                                ).permitAll()
                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                 .anyRequest().authenticated())
-                            .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(
+                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .oauth2Login(login -> login
                         .loginPage("/api/auth/login-url")
                         .userInfoEndpoint(user ->
-                                 user.userService(gitHubOauth2UserService))
-                        .successHandler(successHandler).failureHandler(failureHandler));
+                                user.userService(gitHubOauth2UserService))
+                        .successHandler(successHandler)
+                        .failureHandler(failureHandler));
         return http.build();
     }
 

@@ -19,7 +19,7 @@ public interface CodeChunkRepo extends JpaRepository<CodeChunks, UUID> {
     long countByRepositoryId(UUID repositoryId);
 
     @Query(value = """
-        SELECT *
+        SELECT id, repository_id, file_path, chunk_index, content, language, metadata, cast(embedding as text) as embedding, created_at
         FROM code_chunks
         WHERE repository_id = :repositoryId
         ORDER BY embedding <=> CAST(:embedding AS vector)

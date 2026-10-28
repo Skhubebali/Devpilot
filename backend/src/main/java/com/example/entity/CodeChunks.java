@@ -2,8 +2,7 @@ package com.example.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
+import org.hibernate.annotations.ColumnTransformer;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -40,16 +39,17 @@ public class CodeChunks {
     private String metadata;
 
     /**
-     * pgvector column.
+     * pgvector column: vector(1536).
      *
-     * The column DDL is vector(1536). Without a type hint Hibernate 6 binds
-     * a String field as VARCHAR, which pgvector rejects. Annotating with
-     * @JdbcTypeCode(SqlTypes.OTHER) makes Hibernate call setObject() instead
-     * of setString(), so the pgvector JDBC driver receives the bracket-notation
-     * string "[x,y,z]" and inserts it as the native vector type — no cast needed.
+     * Hibernate binds String as VARCHAR, but PostgreSQL vector columns require an explicit
+     * cast. @ColumnTransformer rewrites the write SQL to CAST(? AS vector), allowing standard
+     * string vectors (e.g. "[0.12, -0.34, ...]") to be inserted seamlessly.
      */
     @Column(name = "embedding", columnDefinition = "vector(1536)")
-    @JdbcTypeCode(SqlTypes.OTHER)
+    @ColumnTransformer(
+            read = "cast(embedding as text)",
+            write = "CAST(? AS vector)"
+    )
     private String embedding;
 
     @Column(name = "created_at", nullable = false, updatable = false)

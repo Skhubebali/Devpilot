@@ -34,14 +34,14 @@ spring:
       api-key: ${OPENROUTER_API_KEY}
       chat:
         options:
-          model: google/gemma-4-31b-it:free
+          model: google/gemini-2.5-flash-lite
       embedding:
         options:
-          model: google/gemini-embedding-exp-03-07:free
+          model: text-embedding-3-small
     vectorstore:
       pgvector:
         initialize-schema: true
-        dimensions: 3072
+        dimensions: 1536
         index-type: HNSW
         distance-type: COSINE_DISTANCE
 

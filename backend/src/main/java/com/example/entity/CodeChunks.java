@@ -1,8 +1,9 @@
 package com.example.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -38,10 +39,17 @@ public class CodeChunks {
     @Column(name = "metadata", columnDefinition = "TEXT")
     private String metadata;
 
-    @Column(
-            name = "embedding",
-            columnDefinition = "vector(1536)"
-    )
+    /**
+     * pgvector column.
+     *
+     * The column DDL is vector(1536). Without a type hint Hibernate 6 binds
+     * a String field as VARCHAR, which pgvector rejects. Annotating with
+     * @JdbcTypeCode(SqlTypes.OTHER) makes Hibernate call setObject() instead
+     * of setString(), so the pgvector JDBC driver receives the bracket-notation
+     * string "[x,y,z]" and inserts it as the native vector type — no cast needed.
+     */
+    @Column(name = "embedding", columnDefinition = "vector(1536)")
+    @JdbcTypeCode(SqlTypes.OTHER)
     private String embedding;
 
     @Column(name = "created_at", nullable = false, updatable = false)

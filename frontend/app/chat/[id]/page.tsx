@@ -66,7 +66,8 @@ export default function ChatPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to get response");
+        const errorText = await response.text().catch(() => `HTTP ${response.status}`);
+        throw new Error(`Server error (${response.status}): ${errorText}`);
       }
 
       const answer = await response.text();
@@ -81,12 +82,13 @@ export default function ChatPage() {
       ]);
     } catch (error) {
       console.error("Chat error:", error);
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "Sorry, I encountered an error while trying to answer your question. Please try again.",
+          content: `⚠️ Error: ${errorMsg}\n\nPlease try again.`,
         },
       ]);
     } finally {

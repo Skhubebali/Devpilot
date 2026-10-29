@@ -9,6 +9,7 @@ import {
   Repo,
 } from "@/hooks/use-repositories";
 import { useLogout } from "@/hooks/use-logout";
+import { getAuthToken, setAuthToken, clearAuthToken } from "@/lib/api";
 
 // ─────────────────────────────────────────────────────────
 // Indexing Progress Bar
@@ -188,6 +189,15 @@ function RepoCard({ repo }: { repo: Repo }) {
 // Dashboard Page
 // ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("token");
+    if (urlToken) {
+      setAuthToken(urlToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+
   const { data: user, isLoading, error } = useCurrentUser();
 
   // Start with a 10 s poll; tighten to 5 s once we know a repo is indexing.
@@ -221,6 +231,7 @@ export default function DashboardPage() {
   // Redirect unauthenticated users to login
   useEffect(() => {
     if (!isLoading && (error || !user)) {
+      clearAuthToken();
       window.location.href = "/login";
     }
   }, [isLoading, error, user]);

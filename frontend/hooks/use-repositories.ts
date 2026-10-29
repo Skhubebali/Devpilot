@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BACKEND_URL } from "@/lib/api";
+import { BACKEND_URL, getAuthHeaders } from "@/lib/api";
 
 export interface Repo {
   id: string;
@@ -23,6 +23,9 @@ export interface Repo {
 
 const getRepositories = async (): Promise<Repo[]> => {
   const response = await fetch(`${BACKEND_URL}/api/repositories`, {
+    headers: {
+      ...getAuthHeaders(),
+    },
     credentials: "include",
   });
 
@@ -46,6 +49,9 @@ export const useRepositories = (options?: {
 
 const getRepository = async (id: string): Promise<Repo> => {
   const response = await fetch(`${BACKEND_URL}/api/repositories/${id}`, {
+    headers: {
+      ...getAuthHeaders(),
+    },
     credentials: "include",
   });
 
@@ -69,6 +75,9 @@ const syncRepositories = async (userId: string): Promise<Repo[]> => {
     `${BACKEND_URL}/api/repositories/sync/${userId}`,
     {
       method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+      },
       credentials: "include",
     }
   );
@@ -96,6 +105,9 @@ const indexRepository = async (repositoryId: string): Promise<string> => {
     `${BACKEND_URL}/api/repositories/${repositoryId}/index`,
     {
       method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+      },
       credentials: "include",
     }
   );

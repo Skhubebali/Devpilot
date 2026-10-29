@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, memo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useRepository } from "@/hooks/use-repositories";
-import { BACKEND_URL } from "@/lib/api";
+import { BACKEND_URL, getAuthHeaders } from "@/lib/api";
 import { ArrowLeft, Send, Loader2, Bot, User } from "lucide-react";
 
 type Message = {
@@ -107,6 +107,7 @@ export default function ChatPage() {
           method: "POST",
           headers: {
             "Content-Type": "text/plain",
+            ...getAuthHeaders(),
           },
           body: userMsg,
           credentials: "include",

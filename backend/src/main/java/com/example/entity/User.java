@@ -43,7 +43,7 @@ public class User implements Serializable {
     @Column(name="token_scopes",columnDefinition = "TEXT", nullable = false)
     private String tokenScopes;
 
-    @Column(name="created_at",unique = true,updatable = false)
+    @Column(name="created_at",updatable = false)
     private Instant createdAt;
 
     @PrePersist

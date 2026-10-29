@@ -199,6 +199,7 @@ export default function DashboardPage() {
     error: repositoriesError,
   } = useRepositories({
     refetchInterval: pollInterval,
+    enabled: !!user?.id,
   });
 
   // Adjust polling rate based on current indexing state
@@ -217,12 +218,35 @@ export default function DashboardPage() {
     }
   }, [user?.id]);
 
+  // Redirect unauthenticated users to login
+  useEffect(() => {
+    if (!isLoading && (error || !user)) {
+      window.location.href = "/login";
+    }
+  }, [isLoading, error, user]);
+
   const isSyncing = syncMutation.isPending;
   const showEmpty =
     !isSyncing &&
     !repositoriesLoading &&
     !syncMutation.isPending &&
     repositories?.length === 0;
+
+  if (isLoading || error || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-foreground font-sans">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <svg className="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <span className="text-sm font-medium">
+            {isLoading ? "Verifying authentication…" : "Redirecting to login…"}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-background text-foreground font-sans">
@@ -260,20 +284,12 @@ export default function DashboardPage() {
               )}
             </div>
             <div className="text-sm overflow-hidden">
-              {error ? (
-                <p className="font-medium text-red-500 text-xs truncate">
-                  Error: {error.message}
-                </p>
-              ) : (
-                <>
-                  <p className="font-semibold text-foreground truncate">
-                    {isLoading ? "Loading…" : user?.displayName || "GitHub User"}
-                  </p>
-                  <p className="text-muted-foreground text-xs truncate">
-                    @{user?.uname || "username"}
-                  </p>
-                </>
-              )}
+              <p className="font-semibold text-foreground truncate">
+                {user.displayName || "GitHub User"}
+              </p>
+              <p className="text-muted-foreground text-xs truncate">
+                @{user.uname || "username"}
+              </p>
             </div>
           </div>
 

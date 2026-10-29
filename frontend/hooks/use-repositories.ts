@@ -35,6 +35,7 @@ const getRepositories = async (): Promise<Repo[]> => {
 
 export const useRepositories = (options?: {
   refetchInterval?: number | false;
+  enabled?: boolean;
 }) => {
   return useQuery({
     queryKey: ["repositories"],

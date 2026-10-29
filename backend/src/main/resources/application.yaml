@@ -9,8 +9,8 @@ server:
   servlet:
     session:
       cookie:
-        same-site: ${COOKIE_SAME_SITE:none}
-        secure: ${COOKIE_SECURE:true}
+        same-site: ${COOKIE_SAME_SITE:lax}
+        secure: ${COOKIE_SECURE:false}
 
 spring:
   datasource:

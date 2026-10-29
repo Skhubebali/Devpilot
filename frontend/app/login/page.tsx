@@ -1,10 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BACKEND_URL } from "@/lib/api";
 
 export default function DevPilotLogin() {
   const [isLoading, setIsLoading] = useState(false);
+  const [oauthError, setOauthError] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("error") === "oauth_failed") {
+        setOauthError(true);
+      }
+    }
+  }, []);
 
   const handleLogin = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -27,6 +37,12 @@ export default function DevPilotLogin() {
           <h1 className="text-4xl font-extrabold tracking-tight text-blue-600">DevPilot</h1>
           <p className="text-muted-foreground mt-3 text-sm">Sign in to your account to continue</p>
         </div>
+
+        {oauthError && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-600 dark:text-red-400">
+            Authentication failed. Please verify your GitHub account permissions and try again.
+          </div>
+        )}
 
         {/* Login Button */}
         <button
